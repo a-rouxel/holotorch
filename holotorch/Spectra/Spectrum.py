@@ -16,8 +16,8 @@ import torch.nn as nn
 import numpy as np
 
 from holotorch.Spectra.WavelengthContainer import WavelengthContainer
-from holotorch.utils.torchinterp1d.torchinterp1d.interp1d import Interp1d
-
+""" from holotorch.utils.torchinterp1d.torchinterp1d.interp1d import Interp1d
+ """
 
 class Spectrum(nn.Module):
 

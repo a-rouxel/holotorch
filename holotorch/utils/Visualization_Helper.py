@@ -17,8 +17,8 @@ import pylab as plt
 
 import torch
 
-import holotorch.utils.pytorch_colors.pytorch_colors as colors
-
+""" import holotorch.utils.pytorch_colors.pytorch_colors as colors
+ """
 from IPython.display import display, Image
 import imageio as io
 from holotorch.utils.Helper_Functions import tt

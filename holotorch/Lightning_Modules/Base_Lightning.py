@@ -22,8 +22,7 @@ from typing import Any
 
 # Import Torch Lightning
 import pytorch_lightning as pl
-from pytorch_lightning.loggers.base import LightningLoggerBase
-from pytorch_lightning.loggers.base import LoggerCollection
+from pytorch_lightning.loggers import TensorBoardLogger
 
 # Import of HoloTorch Objects
 from holotorch.CGH_Datatypes.Light import Light
@@ -96,18 +95,6 @@ class Base_Lightning(pl.LightningModule):
         self.count_batches = 0
 
 
-    @property
-    def logger(self) -> LoggerCollection:
-        
-        logger = super().logger
-    
-        if logger is None:
-            logger = LoggerCollection([])
-        
-        if not isinstance(logger, LoggerCollection):
-            logger = LoggerCollection([logger])
-
-        return logger
     
     def get_targets(self, batch_idx : int) -> IntensityField:
         """ Returns the targets for a given batch_idx
@@ -233,18 +220,18 @@ class Base_Lightning(pl.LightningModule):
         if isinstance(loggers, LightningLoggerBase):
             loggers = [loggers]
         
-        for logger in loggers:
-            try:
-                logger.log_image(
-                    tag = tag,
-                    img_tensor = batch,
-                    global_step = self.current_it_number,
-                    is_batched = True,
-                )
-            except NotImplementedError:
-                print("Image Saving not implemented.")
-            except Exception:
-                raise Exception
+        """ for logger in loggers: """
+        try:
+            logger.log_image(
+                tag = tag,
+                img_tensor = batch,
+                global_step = self.current_it_number,
+                is_batched = True,
+            )
+        except NotImplementedError:
+            print("Image Saving not implemented.")
+        except Exception:
+            raise Exception
 
 
     def log_image(self,
@@ -285,21 +272,20 @@ class Base_Lightning(pl.LightningModule):
         if self.logger is None:
             return
         
-        loggers = self.logger
 
-        for logger in loggers:
-            try:
-                if flag_first:
-                    cur_it = None
-                else: 
-                    cur_it = self.current_it_number
-                    
-                logger.log_full_model(
-                    model = self.model,
-                    current_it_number = cur_it
-                    )
-            except AttributeError:
-                pass
+
+        try:
+            if flag_first:
+                cur_it = None
+            else: 
+                cur_it = self.current_it_number
+                
+            self.logger.log_full_model(
+                model = self.model,
+                current_it_number = cur_it
+                )
+        except AttributeError:
+            pass
 
 
     def log_state_dict(self,
@@ -312,22 +298,20 @@ class Base_Lightning(pl.LightningModule):
         """    
         if self.logger is None:
             return
-        
-        loggers = self.logger
 
-        for logger in loggers:
-            try:
-                if flag_first:
-                    cur_it = None
-                else: 
-                    cur_it = self.current_it_number
-                    
-                logger.log_state_dict(
-                    model = self.model,
-                    current_it_number = cur_it
-                    )
-            except AttributeError:
-                pass  
+
+        try:
+            if flag_first:
+                cur_it = None
+            else: 
+                cur_it = self.current_it_number
+                
+            self.logger.log_state_dict(
+                model = self.model,
+                current_it_number = cur_it
+                )
+        except AttributeError:
+            pass  
 
     def on_fit_start(self) -> None:
         
@@ -366,22 +350,16 @@ class Base_Lightning(pl.LightningModule):
                 value : float or torch.Tensor
                 ):
 
-        for logger in self.logger:
-            try:
-                logger.log_scalar(
-                    tag = name,
-                    scalar_value = value,
-                    global_step = self.count_batches,
-                )
-            except Exception:
-                raise Exception
-    
-    def training_epoch_end(self, outputs) -> None:
 
+        try:
+            self.logger.log_scalar(
+                tag = name,
+                scalar_value = value,
+                global_step = self.count_batches,
+            )
+        except Exception:
+            print(Exception)
 
-
-        self.log_full_model(flag_first=False)
-        
     
     def on_train_batch_start(self, batch: Any, batch_idx: int, unused = 0) -> None:
         
@@ -434,6 +412,7 @@ class Base_Lightning(pl.LightningModule):
         old_value = getattr(self,attr_name).cpu()
 
         setattr(self, attr_name, torch.cat((old_value, value),0))
+        print(value)
 
         self.log_scalar(name = name + '/train', value = value)
 
@@ -606,7 +585,7 @@ class Base_Lightning(pl.LightningModule):
         target = ( target / amax ) * max_value # 255 represents the bitlevel
         input  = ( input / amax ) * max_value 
 
-        psnr = kornia.metrics.psnr(input = input, target = target, max_val = max_value)
+        psnr = kornia.metrics.psnr(image = input, target = target, max_val = max_value)
 
         return psnr
 
